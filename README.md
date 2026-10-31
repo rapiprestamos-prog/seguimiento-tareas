@@ -1,0 +1,33 @@
+# Seguimiento de tareas · RapiPréstamos
+
+Tareas por persona y por proyecto, jefes y colaboradores, metas (MCI), registro de tiempo, obligaciones recurrentes,
+seguimientos, adjuntos y avisos.
+
+- **Página:** `index.html` (GitHub Pages). No trae datos: los pide al servidor después de entrar.
+- **Servidor y base de datos:** Google Apps Script (`apps-script/Code.gs`) sobre una hoja de Google. Los adjuntos van a una carpeta de tu Google Drive.
+- `Code.gs` lleva **la misma lógica central** que `index.html` (quién ve qué y qué puede hacer). Si se cambia en uno, se copia igual en el otro.
+
+## Puesta en marcha (una sola vez)
+
+1. **Hoja de Google.** Crea una hoja nueva (por ejemplo "Seguimiento de tareas — base"). No la compartas.
+2. **Apps Script.** En la hoja: **Extensiones → Apps Script**. Borra lo que trae, pega todo `apps-script/Code.gs` y guarda.
+   - Recarga la hoja: aparece el menú **Seguimiento de tareas → Instalar**. Ejecútalo y acepta los permisos (hoja, Drive para adjuntos, correo para avisos).
+   - Crea las pestañas y programa la **tarea diaria de las 7 a. m.** (tareas recurrentes + avisos por correo).
+3. **Publicar el script.** **Implementar → Nueva implementación → Aplicación web** · *Ejecutar como:* **Yo** · *Acceso:* **Cualquier usuario**. Copia la URL que termina en **`/exec`**.
+4. **Conectar la página.** En `index.html` busca `PEGAR_AQUI_LA_URL_DEL_APPS_SCRIPT` y pon esa URL. Sube el cambio a GitHub.
+5. **GitHub Pages.** **Settings → Pages → Branch: `main` / root → Save** → `https://rapiprestamos-prog.github.io/seguimiento-tareas/`.
+6. **Primer ingreso.** La página detecta que no hay usuarios y te pide **crear la cuenta de administración** (tu usuario y tu contraseña; no queda escrita en ningún código).
+7. **Tu equipo.** En **Usuarios y jerarquía** crea a cada persona con una contraseña temporal, su cargo y a quién reporta.
+
+> Cada vez que cambies `Code.gs`: **Implementar → Gestionar implementaciones → editar → Versión: Nueva → Implementar** (la URL no cambia).
+
+## Cómo funcionan los permisos
+
+- **Colaborador:** ve solo su tablero.
+- **Jefe:** ve el suyo y el de quienes le reportan (y sus equipos). **CEO:** ve todos.
+- **Administración** maneja usuarios y jerarquía, pero **no ve tareas ajenas**. Por seguridad, quien administra **no puede ponerse como jefe de nadie ni subirse el rol**: eso lo hace otra persona administradora.
+- Contraseñas cifradas; 5 intentos fallidos → 15 minutos de espera; contraseña temporal obliga a cambiarla; al cambiarla o asignar una nueva se cierran las otras sesiones.
+
+## Rescate
+
+Si alguien olvidó su contraseña y no hay otra persona administradora: en la hoja, menú **Seguimiento de tareas → Permitir que un usuario cree una contraseña nueva…** y luego esa persona entra con su usuario y crea una.
