@@ -17,6 +17,9 @@
        o al desactivar a alguien, se cierran sus otras sesiones.
    ===================================================================== */
 
+// ID de la hoja de Google (lo que va entre /d/ y /edit en su dirección). Vacío = la hoja donde está pegado el script.
+var HOJA_ID = '';
+
 var AJUSTES = {
   SESION_DIAS: 30,
   ITERACIONES: 1000,             // repeticiones del SHA-256 al cifrar contraseñas
@@ -976,7 +979,7 @@ function shaT_(s) {
 }
 
 function crearStore_() {
-  var libro = SpreadsheetApp.getActiveSpreadsheet(), cache = {}, props = PropertiesService.getScriptProperties(), cc = CacheService.getScriptCache();
+  var libro = HOJA_ID ? SpreadsheetApp.openById(HOJA_ID) : SpreadsheetApp.getActiveSpreadsheet(), cache = {}, props = PropertiesService.getScriptProperties(), cc = CacheService.getScriptCache();
 
   function encabezado_(nombre, cols) {
     var sh = libro.getSheetByName(nombre);
