@@ -21,6 +21,11 @@ seguimientos, adjuntos y avisos.
 
 > Cada vez que cambies `Code.gs`: **Implementar → Gestionar implementaciones → editar → Versión: Nueva → Implementar** (la URL no cambia).
 
+## Novedades (v4)
+- **Tablero por estatus (Kanban):** columnas Pendiente → Completado; se arrastran las tarjetas para cambiar el estatus (en celular, con el selector de cada tarjeta). Filtros por carpeta y prioridad.
+- **Buscador rápido:** botón "Buscar tareas" o **Ctrl + K**. Busca por título, descripción, carpeta o persona (sin importar tildes) y abre la tarea con Enter.
+- **Exportar a Excel:** menú de usuario → "Exportar tareas a Excel" (o el botón del tablero). Hoja "Tareas" con todas las columnas y hoja "Resumen".
+
 ## Cómo funcionan los permisos
 
 - **Colaborador:** ve solo su tablero.

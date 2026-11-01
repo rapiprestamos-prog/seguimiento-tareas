@@ -474,6 +474,48 @@ select.status[data-s="Cancelado"]{background:var(--gray-soft);color:var(--ink3)}
   .calgrid .dow{padding:5px 3px;font-size:10px}
   .cday .cev{white-space:normal;max-height:28px}
 }
+
+/* ---------- v4: tablero Kanban, buscador rápido (Ctrl K) y exportar a Excel ---------- */
+.hsearch{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#dfeaee;border-radius:9px;padding:7px 12px;min-width:220px;text-align:left}
+.hsearch:hover{background:rgba(255,255,255,.16)}
+.hsearch svg{width:15px;height:15px;flex:none}
+.hsearch span{flex:1;font-size:13px}
+.hsearch kbd{font:600 10.5px Inter,sans-serif;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:1px 6px;color:#cfe0e6}
+@media (max-width:760px){.hsearch{min-width:0;padding:7px 9px}.hsearch span,.hsearch kbd{display:none}}
+.kb-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 14px}
+.kb-tools .input{width:auto;padding:7px 10px;font-size:13px}
+.kanban{display:grid;grid-template-columns:repeat(6,minmax(158px,1fr));gap:12px;overflow-x:auto;padding-bottom:10px;align-items:start}
+.kcol{background:var(--line2);border:1px solid var(--line);border-radius:12px;padding:8px;min-height:220px;display:flex;flex-direction:column;gap:8px;transition:background .12s,border-color .12s}
+.kcol.over{border-color:var(--accent);background:var(--accent-soft)}
+.kcol-h{display:flex;align-items:center;gap:8px;padding:4px 6px 6px;font-weight:600;font-size:13px}
+.kcol-h i{width:9px;height:9px;border-radius:50%;flex:none}
+.kcol-h .n{margin-left:auto;font-size:11.5px;color:var(--ink2);background:#fff;border-radius:999px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.kcard{background:#fff;border:1px solid var(--line);border-left:4px solid var(--ink3);border-radius:9px;padding:9px 10px;box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.kcard[draggable="true"]{cursor:grab}
+.kcard:hover{border-color:var(--accent)}
+.kcard.drag{opacity:.45}
+.kcard .kt{font-weight:600;overflow-wrap:anywhere;line-height:1.3}
+.kcard .km{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2)}
+.kcard .km .late{color:var(--red);font-weight:700}
+.kcard .km .soon{color:var(--amber);font-weight:700}
+.kcard .kp{font-size:11px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kempty{font-size:12px;color:var(--ink3);text-align:center;padding:18px 6px;border:1px dashed var(--line);border-radius:9px}
+.kcard .kmove{display:none;font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:#fff;max-width:100%}
+@media (hover:none),(max-width:760px){.kcard .kmove{display:block}}
+.kmore{font-size:12px;color:var(--ink2);text-align:center;padding:4px}
+.qs .qs-in{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.qs .qs-in svg{width:18px;height:18px;color:var(--ink3);flex:none}
+.qs .qs-in input{flex:1;border:0;outline:0;font-size:16px;background:none;min-width:0}
+.qs .qs-res{max-height:60vh;overflow:auto;padding:6px}
+.qs .qr{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 12px;border-radius:9px;text-align:left}
+.qs .qr:hover,.qs .qr.on{background:var(--accent-soft)}
+.qs .qr .qb{flex:1;min-width:0}
+.qs .qr .qt{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qs .qr .qm{font-size:12px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qs .qr .qe{font-size:11.5px;color:var(--ink2);white-space:nowrap}
+.qs .qs-foot{display:flex;gap:14px;flex-wrap:wrap;padding:9px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3)}
+.qs .qs-empty{padding:26px 16px;text-align:center;color:var(--ink3)}
+.qs mark{background:var(--amber-soft);color:inherit;border-radius:3px;padding:0 1px}
 </style>
 </head>
 <body>
@@ -518,6 +560,7 @@ select.status[data-s="Cancelado"]{background:var(--gray-soft);color:var(--ink3)}
     </div>
     <span class="demo-badge hidden" id="demoBadge">DEMO</span>
     <div class="spacer"></div>
+    <button class="hsearch" id="qsBtn" type="button" title="Buscar tareas (Ctrl + K)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Buscar tareas…</span><kbd>Ctrl K</kbd></button>
     <div class="timer-pill hidden" id="timerPill"><span class="tp-dot"></span><span class="tp-t" id="tpTime">0:00:00</span><span class="tp-n" id="tpName" title="Abrir tarea"></span><button id="tpStop">Pausar</button></div>
     <div class="usermenu" id="bellWrap">
       <button class="bell" id="bellBtn" aria-label="Notificaciones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><span class="badge hidden" id="bellCount"></span></button>
@@ -527,6 +570,7 @@ select.status[data-s="Cancelado"]{background:var(--gray-soft);color:var(--ink3)}
       <button class="userbtn" id="userBtn"><span class="avatar" id="meAvatar"></span><span class="who"><span id="meName"></span><small id="meRole"></small></span></button>
       <div class="dropdown hidden" id="userDrop">
         <button data-act="refresh">Actualizar datos</button>
+        <button data-act="exportXlsx">Exportar tareas a Excel</button>
         <button data-act="password">Cambiar contraseña</button>
         <button data-act="admin" id="adminBtn" class="hidden">Administración de usuarios</button>
         <button data-act="logout">Cerrar sesión</button>
@@ -1553,7 +1597,7 @@ var S = { token:null, me:null, people:[], folders:[], tasks:[], files:[], notifs
   owner:null, view:'all', planTab:'semana', q:'', fEstatus:'', fPrioridad:'', sort:'urgencia', group:true, expanded:{},
   lastActivity:Date.now(), alertShown:false, adminSel:null,
   mcis:[], tiempos:[], seguimientos:[], recurrentes:[], clockOffset:0, calMonth:null, tPeriod:'mes', segFilter:'abiertos' };
-var VIEWS=['all','team','none','plan','admin','mci','cal','tiempo','seg'];
+var VIEWS=['all','team','none','plan','admin','mci','cal','tiempo','seg','kanban'];
 var ENFOQUE_LABEL={MCI:'MCI · objetivo',Rutina:'Rutina / obligación',Fuego:'Fuego · urgente imprevisto','Esporádica':'Esporádica · día a día'};
 var ENFOQUE_COLOR={MCI:'var(--e-MCI)',Rutina:'var(--e-Rutina)',Fuego:'var(--e-Fuego)','Esporádica':'var(--e-Esp)','':'var(--e-none)'};
 var TIPOS_BASE=['Análisis','Préstamos / cobros','Reportes','Valuación','Reuniones','Correo / coordinación','Administrativo','Investigación','Legal / documentos'];
@@ -1586,6 +1630,7 @@ var ICON = {
   target:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.2"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg>',
   clock:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>',
   handshake:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="5" cy="5" r="2.2"/><circle cx="11" cy="5" r="2.2"/><path d="M1.5 13c.4-2.2 1.8-3.3 3.5-3.3S8 10.8 8.5 13M7.5 13c.4-2.2 1.8-3.3 3.5-3.3s3.1 1.1 3.5 3.3"/></svg>',
+  board:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><rect x="1.5" y="2.5" width="3.6" height="11" rx="1"/><rect x="6.2" y="2.5" width="3.6" height="7.5" rx="1"/><rect x="10.9" y="2.5" width="3.6" height="5" rx="1"/></svg>',
   play:'<svg viewBox="0 0 10 10"><path d="M2.5 1.5l6 3.5-6 3.5z" fill="currentColor"/></svg>',
   pause:'<svg viewBox="0 0 10 10"><path d="M2.2 1.5h2v7h-2zM5.8 1.5h2v7h-2z" fill="currentColor"/></svg>',
   bellr:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="9" r="5"/><path d="M8 6.5V9l1.5 1M3 3l2-1.5M13 3l-2-1.5"/></svg>',
@@ -1809,6 +1854,7 @@ function renderSide(){
     var open=ownerTasks(o).filter(function(t){return !closed(t);});
     h+='<h3><span>'+(own?'Mis tareas':'Tareas de '+esc(firstName(o)))+'</span></h3>';
     h+='<button class="nav-item'+(S.view==='plan'?' active':'')+'" data-nav="plan">'+ICON.cal+'<span>Plan de trabajo</span><span class="count'+(open.some(overdue)?' red':'')+'">'+open.length+'</span></button>';
+    h+='<button class="nav-item'+(S.view==='kanban'?' active':'')+'" data-nav="kanban">'+ICON.board+'<span>Tablero por estatus</span></button>';
     h+='<button class="nav-item'+(S.view==='all'?' active':'')+'" data-nav="all">'+ICON.list+'<span>Todas por proyecto</span></button>';
     var nm=S.mcis.filter(function(m){ return m.dueno===o && m.estatus==='Activa'; }).length;
     h+='<button class="nav-item'+(S.view==='mci'?' active':'')+'" data-nav="mci">'+ICON.target+'<span>'+(own?'Mis MCI':'MCI')+'</span><span class="count">'+nm+'</span></button>';
@@ -1865,6 +1911,7 @@ function renderMain(){
   if(S.view==='cal') return renderCal();
   if(S.view==='tiempo') return renderTiempo();
   if(S.view==='seg') return renderSeg();
+  if(S.view==='kanban') return renderKanban();
   var f=folderById(S.view);
   var title = S.view==='all'?'Todas por proyecto': S.view==='none'?'Sin carpeta': f.nombre;
   var crumbs = f ? pathOf(S.view).slice(0,-1) : [];
@@ -2112,16 +2159,19 @@ document.addEventListener('click', function(e){
   else if(act==='import') openImport();
   else if(act==='logout') endSession('Sesión cerrada.');
   else if(act==='refresh') refresh().then(function(){ toast('Datos actualizados'); });
+  else if(act==='exportXlsx') exportXlsx(t.getAttribute('data-scope')||'board');
   else if(act==='password') openPassword();
   else if(act==='admin'){ S.view='admin'; render(); }
   else if(act==='readAll') api('markRead',{all:true}).then(function(){ S.notifs.forEach(function(n){n.leida='TRUE';}); render(); renderNPanel(); }).catch(function(e){ toast(e.message,true); });
 });
 document.addEventListener('keydown', function(e){
+  if((e.ctrlKey||e.metaKey) && (e.key==='k'||e.key==='K')){ if(S.token && !$('#app').classList.contains('hidden')){ e.preventDefault(); openQuickSearch(); } return; }
   if(e.key==='Escape'){ if($('#viewerRoot').innerHTML) closeViewer(); else if(!$('#fpsave')) closeModal(); }
   if(e.key==='Enter' && e.target.classList && e.target.classList.contains('pcard')) e.target.click();
 });
 $('#userBtn').addEventListener('click', function(){ $('#npanel').classList.add('hidden'); $('#userDrop').classList.toggle('hidden'); });
 $('#bellBtn').addEventListener('click', function(){ $('#userDrop').classList.add('hidden'); var p=$('#npanel'); p.classList.toggle('hidden'); if(!p.classList.contains('hidden')) renderNPanel(); });
+$('#qsBtn').addEventListener('click', function(){ openQuickSearch(); });
 $('#menuToggle').addEventListener('click', function(){ $('#side').classList.toggle('open'); });
 function closeSide(){ $('#side').classList.remove('open'); }
 
@@ -2403,6 +2453,170 @@ function openPassword(){
     busy(true);
     guard(api('changePassword',{actual:$('#pa').value,nueva:$('#pn').value}),'Contraseña cambiada').then(closeModal).catch(function(){busy(false);});
   });
+}
+
+
+/* ================= v4: Tablero por estatus (Kanban) ================= */
+var KB_COLS=[['Pendiente','var(--ink3)'],['En progreso','var(--accent)'],['Esperando respuesta','var(--amber)'],['En revisión','var(--violet)'],['Pausado','var(--blue)'],['Completado','var(--green)']];
+var PRI_COL={'Crítica':'var(--red)','Alta':'var(--amber)','Media':'var(--blue)','Baja':'var(--green)'};
+function kbList(){
+  var list=ownerTasks().filter(function(t){ return t.estatus!=='Cancelado'; });
+  if(S.kbFolder){ var d=descendants(S.kbFolder); list=list.filter(function(t){ return d[t.carpetaId]; }); }
+  if(S.kbPri) list=list.filter(function(t){ return t.prioridad===S.kbPri; });
+  return list;
+}
+function kbCard(t, canDrag){
+  var d=daysLeft(t), path=pathOf(t.carpetaId);
+  var dt = d===null ? (t.fechaReal&&t.estatus==='Completado'?'Cerrada '+fmtDate(t.fechaReal):'Sin fecha') :
+           (d<0?'<span class="late">'+Math.abs(d)+' d vencida</span>':(d===0?'<span class="soon">Vence hoy</span>':(d<=3?'<span class="soon">'+d+' d</span>':fmtDate(t.fechaTentativa))));
+  var cp=t.checklist?checklistProgress(t.checklist):null;
+  return '<div class="kcard" data-task="'+t.id+'" data-kid="'+t.id+'"'+(canDrag?' draggable="true"':'')+' tabindex="0" style="border-left-color:'+(PRI_COL[t.prioridad]||'var(--ink3)')+'">'+
+    '<div class="kt">'+esc(t.titulo)+'</div>'+
+    '<div class="km"><span class="pill p-'+esc(t.prioridad)+'">'+esc(t.prioridad)+'</span><span>'+dt+'</span>'+
+      (cp&&cp.total?'<span title="Lista de seguimiento">✓ '+cp.done+'/'+cp.total+'</span>':'')+
+      (t.comentarios&&t.comentarios.length?'<span title="Comentarios">'+ICON.chat.replace('<svg ','<svg width="12" height="12" style="vertical-align:-2px" ')+' '+t.comentarios.length+'</span>':'')+'</div>'+
+    (path.length?'<div class="kp">'+esc(path.join(' › '))+'</div>':'')+
+    '<select class="kmove" data-status="'+t.id+'" aria-label="Mover a otro estatus">'+MYA_ESTATUS.map(function(x){ return '<option'+(x===t.estatus?' selected':'')+'>'+x+'</option>'; }).join('')+'</select>'+
+  '</div>';
+}
+function renderKanban(){
+  var list=kbList(), own=isMine();
+  var h=boardHeader('Tablero por estatus', own?'Arrastra las tarjetas para cambiar el estatus':'Vista del tablero');
+  h+='<div class="kb-tools"><select class="input" id="kbFolder" aria-label="Carpeta"><option value="">Todas las carpetas</option>'+folderOptions(S.owner, S.kbFolder||'')+'</select>'+
+     '<select class="input" id="kbPri" aria-label="Prioridad"><option value="">Todas las prioridades</option>'+MYA_PRIORIDAD.map(function(p){ return '<option'+(S.kbPri===p?' selected':'')+'>'+p+'</option>'; }).join('')+'</select>'+
+     '<label class="check"><input type="checkbox" id="kbOld"'+(S.kbOld?' checked':'')+'> Mostrar todas las completadas</label>'+
+     '<div class="spacer" style="flex:1"></div><button class="btn sm" data-act="exportXlsx" data-scope="board">⬇ Exportar a Excel</button></div>';
+  h+='<div class="kanban">'+KB_COLS.map(function(c){
+    var items=list.filter(function(t){ return t.estatus===c[0]; }).sort(workOrder), extra=0;
+    if(c[0]==='Completado'){
+      items.sort(function(a,b){ return String(b.fechaReal||'').localeCompare(String(a.fechaReal||'')); });
+      if(!S.kbOld){ var lim=addDays(S.today,-30), all=items.length; items=items.filter(function(t){ return !t.fechaReal || t.fechaReal>=lim; }); extra=all-items.length; }
+    }
+    return '<div class="kcol" data-kcol="'+esc(c[0])+'"><div class="kcol-h"><i style="background:'+c[1]+'"></i>'+esc(c[0])+'<span class="n">'+items.length+'</span></div>'+
+      (items.length?items.map(function(t){ return kbCard(t, true); }).join(''):'<div class="kempty">Sin tareas</div>')+
+      (extra?'<div class="kmore">+'+extra+' completadas hace más de 30 días</div>':'')+
+    '</div>';
+  }).join('')+'</div>';
+  $('#main').innerHTML=h;
+  kbBindDrag();
+}
+function kbBindDrag(){
+  var dragId=null;
+  $$('#main .kcard[draggable="true"]').forEach(function(c){
+    c.addEventListener('dragstart',function(e){ dragId=c.getAttribute('data-kid'); c.classList.add('drag'); try{ e.dataTransfer.setData('text/plain',dragId); e.dataTransfer.effectAllowed='move'; }catch(x){} });
+    c.addEventListener('dragend',function(){ c.classList.remove('drag'); $$('#main .kcol.over').forEach(function(k){ k.classList.remove('over'); }); });
+  });
+  $$('#main .kcol').forEach(function(col){
+    col.addEventListener('dragover',function(e){ if(!dragId) return; e.preventDefault(); col.classList.add('over'); });
+    col.addEventListener('dragleave',function(e){ if(!col.contains(e.relatedTarget)) col.classList.remove('over'); });
+    col.addEventListener('drop',function(e){
+      e.preventDefault(); col.classList.remove('over');
+      var id=dragId; dragId=null; var est=col.getAttribute('data-kcol'), t=taskById(id);
+      if(!t || t.estatus===est) return;
+      kbMove(t, est);
+    });
+  });
+}
+function kbMove(t, est){
+  var c=Object.assign({}, t, {estatus:est});
+  if(est==='Completado' && !c.fechaReal) c.fechaReal=S.today;
+  var prev=t.estatus; t.estatus=est; renderKanban();            // se ve al instante
+  guard(api('saveTask',{task:c}), 'Movida a «'+est+'»').then(refresh).catch(function(){ t.estatus=prev; renderKanban(); });
+}
+document.addEventListener('change', function(e){
+  var id=e.target.id;
+  if(id==='kbFolder'){ S.kbFolder=e.target.value; renderKanban(); }
+  else if(id==='kbPri'){ S.kbPri=e.target.value; renderKanban(); }
+  else if(id==='kbOld'){ S.kbOld=e.target.checked; renderKanban(); }
+});
+
+/* ================= v4: Buscador rápido (Ctrl + K) ================= */
+function qsNorm(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function qsMark(text, q){
+  var t=String(text||''); if(!q) return esc(t);
+  var i=qsNorm(t).indexOf(q); if(i<0) return esc(t);
+  return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length));
+}
+function qsResults(q){
+  q=qsNorm(q).trim();
+  var list=S.tasks.slice();
+  if(!q){
+    return list.filter(function(t){ return t.dueno===S.me.usuario && !closed(t); }).sort(workOrder).slice(0,8);
+  }
+  var words=q.split(/\s+/);
+  return list.map(function(t){
+    var hay=qsNorm([t.titulo, t.descripcion, pathOf(t.carpetaId).join(' '), nameOf(t.dueno), t.estatus, t.prioridad, t.tipo].join(' '));
+    if(!words.every(function(w){ return hay.indexOf(w)>=0; })) return null;
+    var sc=(qsNorm(t.titulo).indexOf(q)===0?0:qsNorm(t.titulo).indexOf(q)>=0?1:2)+(closed(t)?3:0)+(t.dueno===S.me.usuario?0:.5);
+    return {t:t, sc:sc};
+  }).filter(Boolean).sort(function(a,b){ return a.sc-b.sc || workOrder(a.t,b.t); }).slice(0,30).map(function(x){ return x.t; });
+}
+function openQuickSearch(){
+  if($('#qsIn')) { $('#qsIn').focus(); return; }
+  openModal('<div class="qs"><div class="qs-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>'+
+    '<input id="qsIn" type="search" placeholder="Busca por título, descripción, carpeta o persona…" autocomplete="off" aria-label="Buscar tareas"></div>'+
+    '<div class="qs-res" id="qsRes" role="listbox"></div>'+
+    '<div class="qs-foot"><span>↑ ↓ para moverte</span><span>Enter para abrir</span><span>Esc para cerrar</span></div></div>');
+  var inp=$('#qsIn'), sel=0, res=[];
+  function draw(){
+    var q=qsNorm(inp.value).trim(); res=qsResults(inp.value); if(sel>=res.length) sel=Math.max(0,res.length-1);
+    $('#qsRes').innerHTML = res.length ? (q?'':'<div class="qm" style="padding:6px 12px;font-size:11.5px;color:var(--ink3)">Tus pendientes más próximos</div>')+res.map(function(t,i){
+      var d=daysLeft(t), path=pathOf(t.carpetaId), who=t.dueno!==S.me.usuario?' · '+firstName(t.dueno):'';
+      return '<button class="qr'+(i===sel?' on':'')+'" data-qs="'+i+'" role="option"><span class="pill p-'+esc(t.prioridad)+'">'+esc(t.prioridad)+'</span>'+
+        '<span class="qb"><div class="qt">'+qsMark(t.titulo,q)+'</div><div class="qm">'+esc((path.length?path.join(' › '):'Sin carpeta')+who)+'</div></span>'+
+        '<span class="qe">'+esc(t.estatus)+(d!==null?' · '+(d<0?Math.abs(d)+' d vencida':d===0?'hoy':fmtDate(t.fechaTentativa)):'')+'</span></button>';
+    }).join('') : '<div class="qs-empty">No encontré tareas con «'+esc(inp.value)+'».</div>';
+  }
+  function go(i){
+    var t=res[i]; if(!t) return; closeModal();
+    if(t.dueno!==S.owner){ S.owner=t.dueno; if(['team','admin','seg'].indexOf(S.view)>=0) S.view='plan'; render(); }
+    openTask(t.id);
+  }
+  inp.addEventListener('input', function(){ sel=0; draw(); });
+  inp.addEventListener('keydown', function(e){
+    if(e.key==='ArrowDown'){ e.preventDefault(); sel=Math.min(res.length-1, sel+1); draw(); var b=$('#qsRes .qr.on'); if(b) b.scrollIntoView({block:'nearest'}); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); sel=Math.max(0, sel-1); draw(); var b2=$('#qsRes .qr.on'); if(b2) b2.scrollIntoView({block:'nearest'}); }
+    else if(e.key==='Enter'){ e.preventDefault(); go(sel); }
+  });
+  $('#qsRes').addEventListener('click', function(e){ var b=e.target.closest('[data-qs]'); if(b) go(+b.getAttribute('data-qs')); });
+  draw(); inp.focus();
+}
+
+/* ================= v4: Exportar a Excel ================= */
+function exportXlsx(scope){
+  var list = scope==='all' ? S.tasks.slice() : ownerTasks().slice();
+  if(!list.length){ toast('No hay tareas para exportar.', true); return; }
+  toast('Preparando el Excel…');
+  loadXlsx().then(function(X){
+    list.sort(function(a,b){ return String(a.dueno).localeCompare(String(b.dueno)) || workOrder(a,b); });
+    var rows=list.map(function(t){
+      var r=result(t), cp=t.checklist?checklistProgress(t.checklist):null, d=daysLeft(t);
+      return {
+        'Responsable': nameOf(t.dueno), 'Carpeta': pathOf(t.carpetaId).join(' › ') || 'Sin carpeta', 'Tarea': t.titulo,
+        'Descripción': t.descripcion||'', 'Prioridad': t.prioridad, 'Estatus': t.estatus, 'Tipo': t.tipo||'', 'Enfoque': t.enfoque||'',
+        'MCI': (t.mciId && mciById(t.mciId)) ? mciById(t.mciId).titulo : '',
+        'Asignada': t.fechaAsignacion||'', 'Fecha tentativa': t.fechaTentativa||'', 'Fecha real': t.fechaReal||'',
+        'Días restantes': d===null?'':d, 'Resultado': r?(r.ok?'A tiempo':r.d+' d tarde'):'',
+        'Lista de seguimiento': cp&&cp.total?cp.done+'/'+cp.total:'', 'Tiempo registrado (h)': Math.round(taskSeconds(t.id)/36)/100 || '',
+        'Comentarios': t.comentarios?t.comentarios.length:0, 'Asignada por': t.asignadoPor?nameOf(t.asignadoPor):'',
+        'Creada': t.creado||'', 'Última actualización': t.actualizado||''
+      };
+    });
+    var ws=X.utils.json_to_sheet(rows);
+    ws['!cols']=[18,28,42,40,10,18,14,14,22,12,14,12,10,12,12,12,10,18,18,18].map(function(w){ return {wch:w}; });
+    ws['!autofilter']={ref:ws['!ref']};
+    var wb=X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Tareas');
+    var m=metrics(list), res=[
+      ['Resumen', ''], ['Exportado', new Date().toLocaleString('es-PA')], ['Tablero', scope==='all'?'Todas las tareas visibles':nameOf(S.owner)],
+      ['Total (sin canceladas)', m.total], ['Abiertas', m.abiertas], ['Vencidas', m.vencidas], ['Completadas', m.completadas],
+      ['Completadas a tiempo', m.aTiempo], ['Completadas tarde', m.tarde]
+    ];
+    var ws2=X.utils.aoa_to_sheet(res); ws2['!cols']=[{wch:26},{wch:30}];
+    X.utils.book_append_sheet(wb, ws2, 'Resumen');
+    var nom=(scope==='all'?'equipo':firstName(S.owner)).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_');
+    X.writeFile(wb, 'Tareas_'+nom+'_'+S.today+'.xlsx');
+    toast(list.length+' tareas exportadas');
+  }).catch(function(e){ toast(e.message||String(e), true); });
 }
 
 /* ---------------- Importar tareas desde Excel / CSV ---------------- */
