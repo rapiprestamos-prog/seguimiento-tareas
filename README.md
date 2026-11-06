@@ -21,6 +21,13 @@ seguimientos, adjuntos y avisos.
 
 > Cada vez que cambies `Code.gs`: **Implementar → Gestionar implementaciones → editar → Versión: Nueva → Implementar** (la URL no cambia).
 
+## Novedades (v5) · áreas y jefaturas
+- **CEO ve todo:** el rol CEO ya no se limita a los jefes directos; ve a todas las personas activas.
+- **Jefe ve toda su cadena:** si un supervisor de su área tiene gente a cargo, el jefe también la ve.
+- **Resumen por área:** la vista de jefatura agrupa a la gente por área (Negocios, Operaciones, Tecnología…) con totales de abiertas, vencidas y completadas, y botones para filtrar un área. La barra lateral también agrupa por área.
+- **Áreas sin duplicados:** al guardar una persona, si el área ya existe con otra escritura ("tecnologia", "TECNOLOGÍA") se usa la existente. Las áreas sugeridas se cambian en `AREAS_BASE` (en `Code.gs` y en `index.html`).
+- La regla de quién ve qué la sigue aplicando el servidor (Apps Script).
+
 ## Novedades (v4)
 - **Tablero por estatus (Kanban):** columnas Pendiente → Completado; se arrastran las tarjetas para cambiar el estatus (en celular, con el selector de cada tarjeta). Filtros por carpeta y prioridad.
 - **Buscador rápido:** botón "Buscar tareas" o **Ctrl + K**. Busca por título, descripción, carpeta o persona (sin importar tildes) y abre la tarea con Enter.
@@ -29,7 +36,8 @@ seguimientos, adjuntos y avisos.
 ## Cómo funcionan los permisos
 
 - **Colaborador:** ve solo su tablero.
-- **Jefe:** ve el suyo y el de quienes le reportan (y sus equipos). **CEO:** ve todos.
+- **Jefe de área:** ve el suyo y el de toda su gente: sus directos y, si tiene supervisores, también los equipos de esos supervisores.
+- **CEO (jefe general):** ve los tableros de todas las personas de todas las áreas, con un **Resumen general** agrupado por área.
 - **Administración** maneja usuarios y jerarquía, pero **no ve tareas ajenas**. Por seguridad, quien administra **no puede ponerse como jefe de nadie ni subirse el rol**: eso lo hace otra persona administradora.
 - Contraseñas cifradas; 5 intentos fallidos → 15 minutos de espera; contraseña temporal obliga a cambiarla; al cambiarla o asignar una nueva se cierran las otras sesiones.
 

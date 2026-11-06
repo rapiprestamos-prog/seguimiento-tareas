@@ -174,6 +174,16 @@ select.status[data-s="Cancelado"]{background:var(--gray-soft);color:var(--ink3)}
 .group-h{padding:8px 14px;background:#f7f8f8;border-bottom:1px solid var(--line2);font-size:12px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:7px}
 
 /* Equipo */
+  .side-area{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);margin:10px 0 2px 10px}
+  .area-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}
+  .achip{border:1px solid var(--line);background:var(--panel);color:var(--ink2);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+  .achip small{color:var(--ink3);margin-left:2px}
+  .achip.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+  .achip.on small{color:inherit;opacity:.7}
+  .area-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:22px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink2)}
+  .area-head b{font-size:16px;color:var(--ink)}
+  .area-head .spacer{flex:1}
+  .area-head .bad{color:var(--red);font-weight:600}
 .team{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .pcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s}
 .pcard:hover{border-color:#c8d1d4}
@@ -545,7 +555,7 @@ select.status[data-s="Cancelado"]{background:var(--gray-soft);color:var(--ink3)}
     </div>
     <div class="demo-note hidden" id="demoNote">
       <b>Modo demostración</b> (sin servidor conectado). Los datos se guardan solo en este navegador. Contraseña de todos: <code>demo1234</code><br>
-      <code>admin</code> Administración (jefa) · <code>colab1</code> Colaborador.
+      <code>admin</code> Gerencia general (CEO) · <code>joper</code> Jefa de Operaciones · <code>super1</code> Supervisor · <code>colab1</code> Colaborador.
     </div>
   </form>
 </section>
@@ -628,6 +638,7 @@ var MYA_ESTATUS = ['Pendiente', 'En progreso', 'Esperando respuesta', 'En revisi
 var MYA_PRIORIDAD = ['Crítica', 'Alta', 'Media', 'Baja'];
 var MYA_TIPOS = ['Empresa', 'Proyecto', 'Subproyecto', 'Área', 'Otro'];
 var MYA_ROLES = ['colaborador', 'jefe', 'ceo'];
+var AREAS_BASE = ['Negocios', 'Operaciones', 'Tecnología']; // áreas sugeridas en la lista; se pueden agregar más
 var MYA_COMENTARIO_TIPOS = ['comentario', 'cambios', 'aprobado'];
 var MYA_MAX_ARCHIVO_MB = 10;
 /* v3: enfoque del tiempo — ¿avanza un objetivo (MCI) o es del día a día? */
@@ -674,11 +685,23 @@ function createMyaCore(store) {
      Ser administrador(a) NO da acceso a tableros ajenos: solo permite gestionar usuarios. */
   function visibleOwners(me) {
     var out = {}; out[me.usuario] = true;
-    if (roleOf(me) === 'colaborador') return out;
+    var rol = roleOf(me);
+    if (rol === 'colaborador') return out;
+    var todos = users();
+    // CEO (jefe general): ve a todas las personas activas de todas las áreas
+    if (rol === 'ceo') { todos.forEach(function (u) { if (isTrue(u.activo)) out[u.usuario] = true; }); return out; }
+    // Jefe: ve a toda su cadena (sus directos, los equipos de sus supervisores, etc.)
+    var cola = [low(me.usuario)], visto = {}; visto[low(me.usuario)] = true;
+    while (cola.length) {
+      var j = cola.shift();
+      todos.forEach(function (u) {
+        var k = low(u.usuario);
+        if (low(u.jefe) === j && !visto[k]) { visto[k] = true; cola.push(k); if (isTrue(u.activo)) out[u.usuario] = true; }
+      });
+    }
     var extras = str(me.puedeVer).split(/[,;\n]/).map(function (s) { return s.trim(); }).filter(String);
-    users().forEach(function (u) {
+    todos.forEach(function (u) {
       if (!isTrue(u.activo)) return;
-      if (low(u.jefe) === low(me.usuario)) out[u.usuario] = true;
       extras.forEach(function (x) {
         if (low(x).indexOf('area:') === 0) { if (low(u.area) === low(x.slice(5))) out[u.usuario] = true; }
         else if (low(x) === low(u.usuario)) out[u.usuario] = true;
@@ -687,6 +710,14 @@ function createMyaCore(store) {
     return out;
   }
   function canSee(me, owner) { return !!visibleOwners(me)[owner]; }
+  /* Área: si ya existe con otra escritura (mayúsculas o tildes), se usa la existente para no partir equipos */
+  function sinTildes(s) { return low(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+  function areaCanonica(a) {
+    a = str(a).replace(/\s+/g, ' ').trim(); if (!a) return '';
+    var k = sinTildes(a), base = AREAS_BASE.concat(users().map(function (u) { return str(u.area).trim(); }));
+    for (var i = 0; i < base.length; i++) if (base[i] && sinTildes(base[i]) === k) return base[i];
+    return a;
+  }
 
   function sessionUser(token) {
     var u = token ? store.sessionGet(token) : null;
@@ -1485,7 +1516,7 @@ function createMyaCore(store) {
       var cur = userBy(usuario);
       var row = cur ? copy(cur) : { usuario: usuario, creado: store.now(), salt: '', hash: '' };
       var nuevo = {
-        nombre: clip(u.nombre, 80), cargo: clip(u.cargo, 80), area: clip(u.area, 60), email: clip(u.email, 120),
+        nombre: clip(u.nombre, 80), cargo: clip(u.cargo, 80), area: areaCanonica(clip(u.area, 60)), email: clip(u.email, 120),
         jefe: low(u.jefe), puedeVer: clip(u.puedeVer, 500),
         rol: MYA_ROLES.indexOf(u.rol) >= 0 ? u.rol : 'colaborador',
         esAdmin: u.esAdmin ? 'TRUE' : 'FALSE', activo: u.activo === false ? 'FALSE' : 'TRUE'
@@ -1551,7 +1582,7 @@ var DEMO = !CONFIG.API_URL;
 var MAX_MB = DEMO ? 2 : 10;
 var demoCore = null;
 function demoStore(){
-  var KEY='mya_tareas_demo_v3', mem=null, files={};
+  var KEY='mya_tareas_demo_v5', mem=null, files={};
   function load(){
     if(mem) return mem;
     try{ var raw=localStorage.getItem(KEY); if(raw) mem=JSON.parse(raw); }catch(e){}
@@ -1563,8 +1594,14 @@ function demoStore(){
   function saveFiles(){ try{ localStorage.setItem(KEY+'_files', JSON.stringify(files)); }catch(e){ } }
   function h(salt,pw){ var s=salt+'|'+pw, x=2166136261; for(var i=0;i<s.length;i++){ x^=s.charCodeAt(i); x=Math.imul(x,16777619)>>>0; } return 'demo'+x.toString(16); }
   function seed(){
-    [['admin','Administración (demo)','Gerente general','Gerencia','','jefe','TRUE'],
-     ['colab1','Colaborador (demo)','Analista','Operaciones','admin','colaborador','']
+    [['admin','Gerencia general (demo)','Gerente general','Gerencia','','ceo','TRUE'],
+     ['jnegocios','Jefe de Negocios (demo)','Jefe de Negocios','Negocios','admin','jefe',''],
+     ['joper','Jefa de Operaciones (demo)','Jefa de Operaciones','Operaciones','admin','jefe',''],
+     ['jtec','Jefe de Tecnología (demo)','Jefe de Tecnología','Tecnología','admin','jefe',''],
+     ['super1','Supervisor de Cobros (demo)','Supervisor de Cobros','Operaciones','joper','jefe',''],
+     ['colab1','Colaborador (demo)','Analista','Operaciones','super1','colaborador',''],
+     ['colab2','Ejecutiva de ventas (demo)','Ejecutiva de ventas','Negocios','jnegocios','colaborador',''],
+     ['colab3','Soporte técnico (demo)','Soporte técnico','Tecnología','jtec','colaborador','']
     ].forEach(function(r){ mem.Usuarios.push({usuario:r[0],nombre:r[1],cargo:r[2],area:r[3],jefe:r[4],puedeVer:'',rol:r[5],activo:'TRUE',salt:'s'+r[0],hash:h('s'+r[0],'demo1234'),creado:'',email:'',esAdmin:r[6]||'FALSE'}); });
     save();
   }
@@ -1845,9 +1882,13 @@ function renderSide(){
   var subs=subordinates();
   if(subs.length){
     h+='<h3>Tableros</h3>';
-    h+='<button class="nav-item'+(S.view==='team'?' active':'')+'" data-nav="team">'+ICON.team+'<span>Resumen del equipo</span></button>';
+    h+='<button class="nav-item'+(S.view==='team'?' active':'')+'" data-nav="team">'+ICON.team+'<span>'+(S.me.rol==='ceo'?'Resumen general':'Resumen del equipo')+'</span></button>';
     h+=personItem(S.me.usuario,'Mis tareas',metrics(ownerTasks(S.me.usuario)));
-    subs.forEach(function(p){ h+=personItem(p.usuario,p.nombre,metrics(ownerTasks(p.usuario))); });
+    var areas=teamAreas(subs);
+    areas.forEach(function(a){
+      if(areas.length>1) h+='<div class="side-area">'+esc(a)+'</div>';
+      subs.filter(function(p){ return (p.area||'Sin área')===a; }).forEach(function(p){ h+=personItem(p.usuario,p.nombre,metrics(ownerTasks(p.usuario))); });
+    });
   }
   if(['team','admin'].indexOf(S.view)<0){
     var o=S.owner, own=isMine();
@@ -2053,24 +2094,52 @@ function renderPlan(){
 }
 
 /* ---------------- Equipo ---------------- */
+function teamAreas(subs){
+  var set={}; subs.forEach(function(p){ set[p.area||'Sin área']=1; });
+  return Object.keys(set).sort(function(a,b){ return a==='Sin área'?1:(b==='Sin área'?-1:a.localeCompare(b,'es')); });
+}
 function renderTeam(){
-  var subs=subordinates();
-  var allM=metrics(S.tasks.filter(function(t){ return t.dueno!==S.me.usuario; }));
-  var h='<div class="crumbs">Vista de jefatura</div><div class="title-row"><h2>Resumen del equipo</h2><span class="owner-chip">'+subs.length+' persona'+(subs.length!==1?'s':'')+' a tu cargo</span></div>';
+  var todos=subordinates(), areas=teamAreas(todos), esCeo=S.me.rol==='ceo';
+  if(S.teamArea && areas.indexOf(S.teamArea)<0) S.teamArea='';
+  var subs=todos.filter(function(p){ return !S.teamArea || (p.area||'Sin área')===S.teamArea; });
+  var ids={}; subs.forEach(function(p){ ids[p.usuario]=1; });
+  var allM=metrics(S.tasks.filter(function(t){ return ids[t.dueno]; }));
+  var h='<div class="crumbs">Vista de jefatura</div><div class="title-row"><h2>'+(esCeo?'Resumen general':'Resumen del equipo')+'</h2><span class="owner-chip">'+todos.length+' persona'+(todos.length!==1?'s':'')+(esCeo?' en '+areas.length+' área'+(areas.length!==1?'s':''):' a tu cargo')+'</span></div>';
+  if(areas.length>1){
+    h+='<div class="area-chips"><button class="achip'+(!S.teamArea?' on':'')+'" data-tarea="">Todas</button>'+areas.map(function(a){
+      var n=todos.filter(function(p){ return (p.area||'Sin área')===a; }).length;
+      return '<button class="achip'+(S.teamArea===a?' on':'')+'" data-tarea="'+esc(a)+'">'+esc(a)+' <small>'+n+'</small></button>';
+    }).join('')+'</div>';
+  }
   h+=kpiStrip(allM);
-  h+='<div class="team">'+subs.map(function(p){
+  var grupos = (areas.length>1 && !S.teamArea) ? areas : [null];
+  h+=grupos.map(function(a){
+    var gente = a===null ? subs : subs.filter(function(p){ return (p.area||'Sin área')===a; });
+    var head='';
+    if(a!==null){
+      var gi={}; gente.forEach(function(p){ gi[p.usuario]=1; });
+      var gm=metrics(S.tasks.filter(function(t){ return gi[t.dueno]; }));
+      var jefes=gente.filter(function(p){ return p.rol!=='colaborador'; }).map(function(p){ return nameOf(p.usuario); });
+      head='<div class="area-head"><b>'+esc(a)+'</b><span>'+gente.length+' persona'+(gente.length!==1?'s':'')+(jefes.length?' · '+(jefes.length>1?'Jefes':'Jefe')+': '+esc(jefes.join(', ')):'')+'</span><span class="spacer"></span><span>'+gm.abiertas+' abiertas</span><span class="'+(gm.vencidas?'bad':'')+'">'+gm.vencidas+' vencidas</span><span>'+gm.completadas+' completadas</span></div>';
+    }
+    return head+teamCards(gente);
+  }).join('');
+  $('#main').innerHTML=h;
+  $$('[data-tarea]').forEach(function(b){ b.addEventListener('click',function(){ S.teamArea=b.getAttribute('data-tarea'); renderTeam(); }); });
+}
+function teamCards(subs){
+  return '<div class="team">'+subs.map(function(p){
     var tl=ownerTasks(p.usuario), m=metrics(tl);
     var mine=tl.filter(function(t){ return t.asignadoPor===S.me.usuario && !closed(t); }).length;
     var urgent=tl.filter(function(t){ return !closed(t); }).sort(workOrder).slice(0,4);
     var done = m.total? Math.round(100*m.completadas/m.total):0;
     return '<div class="pcard" data-person="'+esc(p.usuario)+'" tabindex="0">'+
-      '<div class="ph"><span class="avatar">'+esc(initials(p.nombre))+'</span><div><b>'+esc(p.nombre)+'</b><small>'+esc([p.cargo,p.area].filter(Boolean).join(' · '))+'</small></div></div>'+
+      '<div class="ph"><span class="avatar">'+esc(initials(p.nombre))+'</span><div><b>'+esc(p.nombre)+'</b><small>'+esc([p.cargo,p.area].filter(Boolean).join(' · '))+'</small>'+(p.jefe && p.jefe!==S.me.usuario?'<small style="display:block">Reporta a '+esc(nameOf(p.jefe))+'</small>':'')+'</div></div>'+
       '<div class="pstats"><div><div class="k">Abiertas</div><div class="v">'+m.abiertas+'</div></div><div><div class="k">Vencidas</div><div class="v '+(m.vencidas?'bad':'')+'">'+m.vencidas+'</div></div><div><div class="k">A tiempo</div><div class="v">'+(m.pct===null?'—':m.pct+'%')+'</div></div><div><div class="k">De ti</div><div class="v">'+mine+'</div></div></div>'+
       '<div class="bar"><i style="width:'+done+'%"></i></div><div class="pfoot"><span>'+m.completadas+' de '+m.total+' completadas</span><span>'+(m.atrasoProm?'atraso prom. '+m.atrasoProm+' d':'')+'</span></div>'+teamTimeLine(p.usuario)+
       (urgent.length?'<div class="plist">'+urgent.map(function(t){ var d=daysLeft(t); return '<div><span><span class="pill p-'+esc(t.prioridad)+'" style="font-size:10px;padding:0 6px;margin-right:4px">'+esc(t.prioridad[0])+'</span>'+esc(t.titulo)+'</span><span class="days '+(d!==null&&d<0?'late':(d!==null&&d<=3?'soon':''))+'">'+(d===null?'sin fecha':(d<0?Math.abs(d)+' d venc.':(d===0?'hoy':'en '+d+' d')))+'</span></div>'; }).join('')+'</div>':'<div class="plist" style="color:var(--ink3)">Sin tareas abiertas</div>')+
     '</div>';
   }).join('')+'</div>';
-  $('#main').innerHTML=h;
 }
 
 /* ---------------- Notificaciones ---------------- */
@@ -2764,18 +2833,18 @@ function drawAdmin(){
   var u=sel||{usuario:'',nombre:'',cargo:'',area:'',email:'',jefe:'',rol:'colaborador',puedeVer:'',esAdmin:false,activo:true};
   var h='<div class="crumbs">Administración general</div><div class="title-row"><h2>Usuarios y jerarquía</h2><span class="owner-chip">'+ADM.users.filter(function(x){return x.activo;}).length+' personas activas</span><div class="spacer"></div><button class="btn primary" id="admNew">'+ICON.plus+'Nueva persona</button></div>';
   h+='<div class="privacy">'+ICON.shield+'<div>Esta sección administra <b>personas, roles y vínculos jefe–colaborador</b>. No muestra tareas: como administradora solo ves tu propio tablero. Por seguridad no puedes asignarte como jefa de nadie ni darte accesos a ti misma.</div></div>';
-  h+='<div class="admin-grid"><div class="card"><h3>Organigrama</h3><div class="cs">Haz clic en una persona para editarla. Cada quien ve el tablero de quienes cuelgan directamente debajo.</div>'+orgTree()+'</div>';
+  h+='<div class="admin-grid"><div class="card"><h3>Organigrama</h3><div class="cs">Haz clic en una persona para editarla. Cada jefe ve a toda la gente que cuelga debajo de él (directa o a través de sus supervisores). El CEO ve a todos.</div>'+orgTree()+'</div>';
   h+='<div class="card"><h3 id="admFormT">'+(sel?'Editar · '+esc(sel.nombre):'Nueva persona')+'</h3><div class="cs">'+(sel?'Usuario: <b>'+esc(sel.usuario)+'</b>':'Completa los datos y asigna una contraseña temporal.')+'</div>'+
     (isSelf?'<div class="msg info">Este es tu usuario. Puedes cambiar tus datos, tu contraseña y a quién reportas (eso le da acceso a tu jefe, no a ti). Tu rol, accesos y permisos de administración solo los puede cambiar otra persona administradora.</div>':'')+
     '<div class="grid2"><div class="field"><label>Usuario</label><input class="input" id="au" value="'+esc(u.usuario)+'" placeholder="ej. lmendez"'+(sel?' disabled':'')+'></div><div class="field"><label>Nombre completo</label><input class="input" id="an" value="'+esc(u.nombre)+'"></div></div>'+
     '<div class="grid2"><div class="field"><label>Cargo</label><input class="input" id="ac" value="'+esc(u.cargo)+'"></div><div class="field"><label>Área</label><input class="input" id="aa" value="'+esc(u.area)+'" placeholder="Negocios, Contabilidad, Legal…" list="areas"></div></div>'+
-    '<datalist id="areas">'+Array.from(new Set(ADM.users.map(function(x){return x.area;}).filter(Boolean))).map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist>'+
+    '<datalist id="areas">'+Array.from(new Set(AREAS_BASE.concat(ADM.users.map(function(x){return x.area;}).filter(Boolean)))).map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist>'+
     '<div class="field"><label>Correo para los avisos diarios (obligaciones con fecha y seguimientos)</label><input class="input" id="ae" type="email" value="'+esc(u.email||'')+'" placeholder="nombre@rapiprestamos.net"></div>'+
     '<div class="grid2"><div class="field"><label>Rol</label><select class="input" id="ar"'+(isSelf?' disabled':'')+'><option value="colaborador">Colaborador</option><option value="jefe">Jefe de área</option><option value="ceo">CEO</option></select></div>'+
     '<div class="field"><label>Reporta a (jefe directo)</label><select class="input" id="aj"><option value="">— Nadie (nivel más alto) —</option>'+ADM.users.filter(function(x){ return x.usuario!==u.usuario && x.activo && x.usuario!==S.me.usuario; }).sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');}).map(function(x){return '<option value="'+esc(x.usuario)+'">'+esc(x.nombre)+' · '+ROLE_LABEL[x.rol]+'</option>';}).join('')+(u.jefe===S.me.usuario?'<option value="'+esc(S.me.usuario)+'">'+esc(S.me.nombre)+'</option>':'')+'</select></div></div>'+
     '<div class="role-help" id="roleHelp"></div>'+
     '<div class="field" id="pvField"><label>Accesos adicionales (opcional)</label><input class="input" id="av" value="'+esc(u.puedeVer||'')+'" placeholder="ej. lcontab, area:Legal"'+(isSelf?' disabled':'')+'></div>'+
-    '<div class="role-help">Solo para Jefes y CEO: tableros extra que podrá ver además de su equipo directo. Usuarios separados por coma o un área completa con <code>area:Nombre</code>.</div>'+
+    '<div class="role-help">Solo para Jefes: tableros extra que podrá ver además de su equipo (el CEO ya ve a todos). Usuarios separados por coma o un área completa con <code>area:Nombre</code>.</div>'+
     '<div class="field"><label>'+(isSelf?'Nueva contraseña (déjala vacía para no cambiarla)':(sel?'Contraseña temporal nueva (déjala vacía para no cambiarla)':'Contraseña temporal'))+(isSelf?'':' · deberá cambiarla al entrar')+'</label><input class="input" id="ap" type="text" autocomplete="off" placeholder="mínimo 8 caracteres"></div>'+
     '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px"><label class="check"><input type="checkbox" id="aadm"'+(u.esAdmin?' checked':'')+(isSelf?' disabled':'')+'> Administra usuarios (no da acceso a tareas)</label><label class="check"><input type="checkbox" id="aact"'+(u.activo?' checked':'')+(isSelf?' disabled':'')+'> Activo</label></div>'+
     '<div class="preview-box" id="admPrev"></div>'+
@@ -2788,14 +2857,17 @@ function drawAdmin(){
   $('#ar').value=u.rol; $('#aj').value=u.jefe||'';
   function upd(){
     var rol=$('#ar').value, jefe=$('#aj').value, name=$('#an').value||'Esta persona';
-    var help={colaborador:'Colaborador: solo ve y gestiona su propio tablero.',jefe:'Jefe de área: ve su tablero y el de su equipo directo; puede asignar tareas, cambiar prioridad, fechas y descripción.',ceo:'CEO: ve su tablero y el de quienes le reportan directo (los jefes).'}[rol];
+    var help={colaborador:'Colaborador: solo ve y gestiona su propio tablero.',jefe:'Jefe de área: ve su tablero y el de toda su gente (directos y los equipos de sus supervisores); puede asignar tareas, cambiar prioridad, fechas y descripción.',ceo:'CEO (jefe general): ve los tableros de todas las personas de todas las áreas.'}[rol];
     $('#roleHelp').textContent=help;
     $('#pvField').style.opacity = rol==='colaborador'?'.5':'1'; $('#av').disabled = isSelf || rol==='colaborador';
-    var team = sel ? ADM.users.filter(function(x){ return x.jefe===sel.usuario && x.activo; }).map(function(x){return x.nombre;}) : [];
+    var team = [];
+    if(sel){ var cola=[sel.usuario], vis={}; vis[sel.usuario]=1; while(cola.length){ var j=cola.shift(); ADM.users.forEach(function(x){ if(x.jefe===j && !vis[x.usuario]){ vis[x.usuario]=1; cola.push(x.usuario); if(x.activo) team.push(x.nombre); } }); } }
     var extra = rol!=='colaborador' && $('#av').value.trim() ? ' + accesos adicionales: '+$('#av').value.trim() : '';
-    var sees = rol==='colaborador' ? 'solo su propio tablero' : (team.length? 'su tablero + '+team.join(', ') : 'su tablero (aún no tiene personas a cargo)')+extra;
-    var boss = jefe ? (admUser(jefe)||{}).nombre : '';
-    $('#admPrev').innerHTML='<b>'+esc(name)+'</b> verá: '+esc(sees)+'.<br>'+(boss?'Sus tareas las verá: <b>'+esc(boss)+'</b>.':'Nadie más verá sus tareas (no reporta a nadie).');
+    var sees = rol==='colaborador' ? 'solo su propio tablero' : rol==='ceo' ? 'los tableros de todas las personas activas' : (team.length? 'su tablero + '+team.join(', ') : 'su tablero (aún no tiene personas a cargo)')+extra;
+    var arriba=[], x=jefe, g=0;
+    while(x && g++<30){ var ux=admUser(x); if(!ux) break; if(ux.activo && arriba.indexOf(ux.nombre)<0) arriba.push(ux.nombre); x=ux.jefe; }
+    ADM.users.forEach(function(c){ if(c.rol==='ceo' && c.activo && c.usuario!==(sel&&sel.usuario) && arriba.indexOf(c.nombre)<0) arriba.push(c.nombre); });
+    $('#admPrev').innerHTML='<b>'+esc(name)+'</b> verá: '+esc(sees)+'.<br>'+(arriba.length?'Sus tareas las verán: <b>'+esc(arriba.join(', '))+'</b>.':'Nadie más verá sus tareas.');
   }
   ['ar','aj','av','an'].forEach(function(k){ $('#'+k).addEventListener(k==='av'||k==='an'?'input':'change',upd); }); upd();
   $('#admNew').addEventListener('click',function(){ S.adminSel=null; drawAdmin(); $('#au').focus(); });

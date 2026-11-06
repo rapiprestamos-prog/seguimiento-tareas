@@ -57,6 +57,7 @@ var MYA_ESTATUS = ['Pendiente', 'En progreso', 'Esperando respuesta', 'En revisi
 var MYA_PRIORIDAD = ['Crítica', 'Alta', 'Media', 'Baja'];
 var MYA_TIPOS = ['Empresa', 'Proyecto', 'Subproyecto', 'Área', 'Otro'];
 var MYA_ROLES = ['colaborador', 'jefe', 'ceo'];
+var AREAS_BASE = ['Negocios', 'Operaciones', 'Tecnología']; // áreas sugeridas en la lista; se pueden agregar más
 var MYA_COMENTARIO_TIPOS = ['comentario', 'cambios', 'aprobado'];
 var MYA_MAX_ARCHIVO_MB = 10;
 /* v3: enfoque del tiempo — ¿avanza un objetivo (MCI) o es del día a día? */
@@ -103,11 +104,23 @@ function createMyaCore(store) {
      Ser administrador(a) NO da acceso a tableros ajenos: solo permite gestionar usuarios. */
   function visibleOwners(me) {
     var out = {}; out[me.usuario] = true;
-    if (roleOf(me) === 'colaborador') return out;
+    var rol = roleOf(me);
+    if (rol === 'colaborador') return out;
+    var todos = users();
+    // CEO (jefe general): ve a todas las personas activas de todas las áreas
+    if (rol === 'ceo') { todos.forEach(function (u) { if (isTrue(u.activo)) out[u.usuario] = true; }); return out; }
+    // Jefe: ve a toda su cadena (sus directos, los equipos de sus supervisores, etc.)
+    var cola = [low(me.usuario)], visto = {}; visto[low(me.usuario)] = true;
+    while (cola.length) {
+      var j = cola.shift();
+      todos.forEach(function (u) {
+        var k = low(u.usuario);
+        if (low(u.jefe) === j && !visto[k]) { visto[k] = true; cola.push(k); if (isTrue(u.activo)) out[u.usuario] = true; }
+      });
+    }
     var extras = str(me.puedeVer).split(/[,;\n]/).map(function (s) { return s.trim(); }).filter(String);
-    users().forEach(function (u) {
+    todos.forEach(function (u) {
       if (!isTrue(u.activo)) return;
-      if (low(u.jefe) === low(me.usuario)) out[u.usuario] = true;
       extras.forEach(function (x) {
         if (low(x).indexOf('area:') === 0) { if (low(u.area) === low(x.slice(5))) out[u.usuario] = true; }
         else if (low(x) === low(u.usuario)) out[u.usuario] = true;
@@ -116,6 +129,14 @@ function createMyaCore(store) {
     return out;
   }
   function canSee(me, owner) { return !!visibleOwners(me)[owner]; }
+  /* Área: si ya existe con otra escritura (mayúsculas o tildes), se usa la existente para no partir equipos */
+  function sinTildes(s) { return low(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+  function areaCanonica(a) {
+    a = str(a).replace(/\s+/g, ' ').trim(); if (!a) return '';
+    var k = sinTildes(a), base = AREAS_BASE.concat(users().map(function (u) { return str(u.area).trim(); }));
+    for (var i = 0; i < base.length; i++) if (base[i] && sinTildes(base[i]) === k) return base[i];
+    return a;
+  }
 
   function sessionUser(token) {
     var u = token ? store.sessionGet(token) : null;
@@ -914,7 +935,7 @@ function createMyaCore(store) {
       var cur = userBy(usuario);
       var row = cur ? copy(cur) : { usuario: usuario, creado: store.now(), salt: '', hash: '' };
       var nuevo = {
-        nombre: clip(u.nombre, 80), cargo: clip(u.cargo, 80), area: clip(u.area, 60), email: clip(u.email, 120),
+        nombre: clip(u.nombre, 80), cargo: clip(u.cargo, 80), area: areaCanonica(clip(u.area, 60)), email: clip(u.email, 120),
         jefe: low(u.jefe), puedeVer: clip(u.puedeVer, 500),
         rol: MYA_ROLES.indexOf(u.rol) >= 0 ? u.rol : 'colaborador',
         esAdmin: u.esAdmin ? 'TRUE' : 'FALSE', activo: u.activo === false ? 'FALSE' : 'TRUE'
